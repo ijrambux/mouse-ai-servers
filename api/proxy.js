@@ -1,47 +1,42 @@
-// بسيط وآمن نسبياً: يسمح بجلب محتوى فقط من قائمة allowedDomains
-// قم بتعديل allowedDomains حسب حاجتك أو اجعلها فارغة للسماح بالكل (غير مستحسن لأسباب أمان).
-import fetch from 'node-fetch';
-
-const allowedDomains = [
-  'iptv-org.github.io',
-  'cdn3.wowza.com',
-  'example.com' // اضف هنا المجالات الموثوقة لديك
-];
-
-// مسموح أيضاً جعل allowedDomains=[] للسماح المؤقت (تحذير أمني)
-export default async function handler(req, res) {
-  const url = req.query.url;
-  if (!url) {
-    res.status(400).send('Missing url parameter');
-    return;
-  }
-
-  let decoded;
-  try { decoded = decodeURIComponent(url); } catch(e) { decoded = url; }
-
+// استبدل fetchM3U الأصلية بهذه الدالة في index.html (client)
+async function fetchM3U(url, useProxy = false, timeoutMs = 15000) {
   try {
-    const parsed = new URL(decoded);
-    // أجري تحقق بسيط على النطاق
-    if (allowedDomains.length > 0 && !allowedDomains.includes(parsed.hostname)) {
-      res.status(403).send('Domain not allowed: ' + parsed.hostname);
-      return;
-    }
+    const finalUrl = useProxy ? `/api/proxy?url=${encodeURIComponent(url)}` : url;
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
 
-    // Fetch the remote resource
-    const upstream = await fetch(decoded, { timeout: 15000 });
-    if (!upstream.ok) {
-      res.status(upstream.status).send('Upstream error: ' + upstream.statusText);
-      return;
-    }
+    const res = await fetch(finalUrl, { signal: controller.signal });
+    clearTimeout(id);
 
-    // نصحة: نمرّر المحتوى كما هو مع رؤوس مناسبة
-    const text = await upstream.text();
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'text/plain; charset=utf-8');
-    // اسمح بالوصول من الموقع نفسه (CORS)
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=59');
-    res.status(200).send(text);
+    if (!res.ok) {
+      return { ok: false, error: `HTTP ${res.status} ${res.statusText}` };
+    }
+    const text = await res.text();
+    return { ok: true, text };
   } catch (err) {
-    res.status(500).send('Proxy error: ' + (err.message || err.toString()));
+    return { ok: false, error: err.message || String(err) };
   }
+}
+
+// مثال استخدام مع fallback تلقائي
+async function loadM3UAndInsert(url) {
+  // محاولة مباشرة
+  let r = await fetchM3U(url, false);
+  if (!r.ok) {
+    console.warn('Direct fetch failed:', r.error, 'Trying proxy...');
+    // حاول مع البروكسي المحلي (Vercel function)
+    r = await fetchM3U(url, true);
+    if (!r.ok) {
+      // عرض خطأ واضح للمستخدم
+      showNotification(`فشل تحميل المايلو (${r.error}). جرب الاستيراد يدوياً أو تأكد من CORS أو استخدم proxy.`, 'error');
+      return;
+    }
+  }
+  // إذا نجح: parse and cache
+  const parsed = parseM3U(r.text, url);
+  parsedM3UCache[url] = parsed;
+  localStorage.setItem('m3u_cache', JSON.stringify(parsedM3UCache));
+  rebuildAllChannels();
+  renderChannels();
+  showNotification(`تم تحميل ${parsed.length} قناة من ${url}`, 'success');
 }
