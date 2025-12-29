@@ -1,42 +1,42 @@
-// استبدل fetchM3U الأصلية بهذه الدالة في index.html (client)
-async function fetchM3U(url, useProxy = false, timeoutMs = 15000) {
-  try {
-    const finalUrl = useProxy ? `/api/proxy?url=${encodeURIComponent(url)}` : url;
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeoutMs);
+// Vercel Serverless Function - proxy لتجاوز CORS عند الحاجة
+// ضع هذا الملف في مجلد "api" في المشروع (api/proxy.js)
+// ملاحظة أمان: افحص allowedDomains أو اتركه فارغاً فقط للاختبار.
+import fetch from 'node-fetch';
 
-    const res = await fetch(finalUrl, { signal: controller.signal });
-    clearTimeout(id);
+const allowedDomains = []; // مصفوفة نطاقات مسموح بها. [] = السماح بكل الدومينات (غير مستحسن للإنتاج)
 
-    if (!res.ok) {
-      return { ok: false, error: `HTTP ${res.status} ${res.statusText}` };
-    }
-    const text = await res.text();
-    return { ok: true, text };
-  } catch (err) {
-    return { ok: false, error: err.message || String(err) };
+export default async function handler(req, res) {
+  const url = req.query.url;
+  if (!url) {
+    res.status(400).send('Missing url parameter');
+    return;
   }
-}
 
-// مثال استخدام مع fallback تلقائي
-async function loadM3UAndInsert(url) {
-  // محاولة مباشرة
-  let r = await fetchM3U(url, false);
-  if (!r.ok) {
-    console.warn('Direct fetch failed:', r.error, 'Trying proxy...');
-    // حاول مع البروكسي المحلي (Vercel function)
-    r = await fetchM3U(url, true);
-    if (!r.ok) {
-      // عرض خطأ واضح للمستخدم
-      showNotification(`فشل تحميل المايلو (${r.error}). جرب الاستيراد يدوياً أو تأكد من CORS أو استخدم proxy.`, 'error');
+  let decoded;
+  try { decoded = decodeURIComponent(url); } catch(e) { decoded = url; }
+
+  try {
+    const parsed = new URL(decoded);
+    if (allowedDomains.length > 0 && !allowedDomains.includes(parsed.hostname)) {
+      res.status(403).send('Domain not allowed: ' + parsed.hostname);
       return;
     }
+
+    const upstream = await fetch(decoded, { timeout: 15000 });
+    if (!upstream.ok) {
+      res.status(upstream.status).send('Upstream error: ' + upstream.statusText);
+      return;
+    }
+
+    const contentType = upstream.headers.get('content-type') || 'text/plain; charset=utf-8';
+    const text = await upstream.text();
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=59');
+    res.status(200).send(text);
+  } catch (err) {
+    console.error('Proxy error:', err);
+    res.status(500).send('Proxy error: ' + (err.message || String(err)));
   }
-  // إذا نجح: parse and cache
-  const parsed = parseM3U(r.text, url);
-  parsedM3UCache[url] = parsed;
-  localStorage.setItem('m3u_cache', JSON.stringify(parsedM3UCache));
-  rebuildAllChannels();
-  renderChannels();
-  showNotification(`تم تحميل ${parsed.length} قناة من ${url}`, 'success');
 }
