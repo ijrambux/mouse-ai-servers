@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MOUSE AI 🐭 — دمج سيرفرات IPTV (Web App)</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#001226">
+  <style>
+    :root{--bg:#07101a;--primary:#00a8ff;--muted:#9fb0c8;--card:#0b1620;--text:#eaf6ff}
+    *{box-sizing:border-box;font-family:Tahoma,Arial, sans-serif}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#02030a);color:var(--text);min-height:100vh}
+    header{height:86px;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:linear-gradient(90deg,#000,#001025 45%,var(--primary));box-shadow:0 8px 40px rgba(0,0,0,.6)}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:56px;height:56px;border-radius:12px;background:radial-gradient(circle,#00213a,#004c99);display:flex;align-items:center;justify-content:center;font-size:22px}
+    h1{font-size:1.05rem;margin:0;background:linear-gradient(90deg,#002b4d,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    main{display:flex;gap:18px;padding:18px;align-items:flex-start;flex-wrap:wrap}
+    aside{width:420px;background:linear-gradient(180deg,var(--card),#071126);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,.03);box-shadow:0 10px 40px rgba(0,0,0,.6)}
+    section.content{flex:1;min-width:320px;background:linear-gradient(180deg,#06121a,#071024);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,.03);box-shadow:0 18px 60px rgba(0,0,0,.6)}
+    .muted{color:var(--muted);font-size:13px}
+    label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+    input[type="text"], textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.04);background:transparent;color:var(--text);margin-bottom:10px;font-size:14px}
+    textarea{min-height:120px;resize:vertical}
+    .row{display:flex;gap:8px}
+    .row .col{flex:1}
+    button{background:transparent;border:1px solid rgba(255,255,255,.06);padding:10px 12px;border-radius:8px;color:var(--text);cursor:pointer}
+    button.primary{background:linear-gradient(90deg,#0066cc,var(--primary));border:none}
+    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+    th,td{padding:8px;text-align:right;border-bottom:1px solid rgba(255,255,255,.03)}
+    .preview{background:rgba(255,255,255,.02);padding:10px;border-radius:8px;margin-top:12px;color:#cfeeff;font-size:13px;white-space:pre-wrap;max-height:260px;overflow:auto;border:1px solid rgba(255,255,255,.02)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.03);font-size:13px;color:var(--muted)}
+    footer{padding:14px 20px;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid rgba(255,255,255,.02);margin-top:18px}
+    @media(max-width:980px){aside{width:100%}section.content{width:100%}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">🐭</div>
+      <div>
+        <h1>MOUSE AI 🐭 — دمج سيرفرات IPTV</h1>
+        <div class="muted">صفحة ويب قابلة للتثبيت كتطبيق (PWA). عمل محلي وسهل النشر.</div>
+      </div>
+    </div>
+    <div class="muted">حقوق النشر © MOUSE AI 🐭</div>
+  </header>
+
+  <main>
+    <aside>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700">استيراد السيرفرات</div>
+        <div class="chip" id="serverCount">0 سيرفر</div>
+      </div>
+
+      <label>لصق قائمة السيرفرات (كل سطر: Host[:Port] <tab> Username <tab> Password)</label>
+      <textarea id="bulkInput" placeholder="مثال: fortv.cc:8080	1A63fh	337373"></textarea>
+
+      <div class="controls">
+        <button class="primary" id="btnImport">استيراد</button>
+        <button id="btnClear" class="small">مسح الكل</button>
+      </div>
+
+      <label>قالب إنشاء الروابط</label>
+      <select id="templateSelect">
+        <option value="xtream">Xtream-style: {protocol}://{host}/get.php?username={user}&password={pass}&type=m3u</option>
+        <option value="m3u_url">Basic auth URL: {protocol}://{user}:{pass}@{host}/playlist.m3u</option>
+        <option value="custom">مخصص (استخدم {host} {user} {pass} {port} {protocol})</option>
+      </select>
+      <input id="customTemplate" placeholder="قالب مخصص (مثال: https://{host}/live/{user}/{pass}/index.m3u)" style="display:none" />
+
+      <div class="controls" style="margin-top:10px">
+        <button id="btnGenerate" class="primary">إنشاء M3U مدمجة</button>
+        <button id="btnExportAll" class="small">تحميل</button>
+        <button id="btnCopy" class="small">نسخ</button>
+      </div>
+
+      <label>معاينة المخرجات</label>
+      <div id="preview" class="preview">اضغط "إنشاء M3U مدمجة" لعرض المعاينة هنا.</div>
+
+      <div style="margin-top:12px">
+        <div style="font-weight:700;margin-bottom:8px">قائمة السيرفرات المحفوظة</div>
+        <table id="serversTbl">
+          <thead><tr><th>Host:Port</th><th>Username</th><th>Password</th><th>مصدر</th><th>إجراءات</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </aside>
+
+    <section class="content">
+      <h2>تشغيل كتطبيق ويب</h2>
+      <p class="muted">هذا المشروع يعمل كـ PWA (يمكن تثبيته على الجهاز). لتشغيله محلياً: افتح مجلد الملفات عبر خادم HTTP بسيط (python -m http.server) أو انشر على GitHub Pages.</p>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.03);margin:12px 0">
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="h_host" type="text" placeholder="Host[:Port]" style="flex:1" />
+        <input id="h_user" type="text" placeholder="Username" />
+        <input id="h_pass" type="text" placeholder="Password" />
+        <button id="btnAddSave" class="primary">إضافة يدوي</button>
+      </div>
+
+      <div style="margin-top:12px" class="muted">
+        • ملاحظة مهمة: تحميل روابط M3U مباشرة من مواقع خارجية قد يفشل بسبب CORS. استخدم proxy أو استورد الملف يدوياً في مربع الاستيراد.
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.03);margin:12px 0">
+
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>حالة التطبيق: <span id="appStatus" class="muted">جاهز</span></div>
+        <div>
+          <button id="btnTestOpen" class="small">فتح أول رابط</button>
+          <button id="btnClearCache" class="small">مسح الكاش</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    حقوق الطبع © MOUSE AI 🐭 — استخدم هذه الأدوات بمسؤولية. التطبيق يعمل بالكامل من جهة العميل (client-side).
+  </footer>
+
+<script>
+/* بسيط: تسجيل Service Worker (لـ PWA و caching). */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(()=> console.log('SW registered')).catch(e=>console.warn('SW failed', e));
+}
+
+/* وظائف الواجهة: استخدم نفس المنطق كما في النسخة السابقة (مبسّطة) */
+const STORAGE_KEY = 'mouse_ai_merge_servers_v1';
+const PREVIEW_CACHE = 'mouse_ai_merge_preview_v1';
+
+function loadServers(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }catch(e){ return [] } }
+function saveServers(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+function showToast(msg){ alert(msg); } // مبسط - يمكنك تبديله بإشعار أجمل
+
+function parseBulk(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const out = [];
+  for (const raw of lines){
+    let cols = raw.split(/\t+/);
+    if (cols.length === 1) cols = raw.split(/\s{2,}/);
+    if (cols.length === 1) cols = raw.split(/\s+/);
+    if (cols.length >= 3){ out.push({ host:cols[0].trim(), user:cols[1].trim(), pass:cols[2].trim(), id:Math.random().toString(36).slice(2,9), source:'imported' }); }
+  }
+  return out;
+}
+
+function renderServers(){
+  const list = loadServers();
+  const tbody = document.querySelector('#serversTbl tbody'); tbody.innerHTML = '';
+  for (const s of list){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${escapeHtml(s.host)}</td><td>${escapeHtml(s.user)}</td><td>${escapeHtml(s.pass)}</td><td>${escapeHtml(s.source||'manual')}</td>
+      <td><button data-id="${s.id}" class="del small">حذف</button></td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById('serverCount').textContent = list.length + ' سيرفر';
+  document.querySelectorAll('button.del').forEach(b => b.onclick = ()=>{ if(confirm('حذف؟')) { const id=b.dataset.id; const arr=loadServers().filter(x=>x.id!==id); saveServers(arr); renderServers(); }});
+}
+
+/* Template builder */
+function getTemplate(){
+  const sel = document.getElementById('templateSelect').value;
+  if (sel === 'xtream') return '{protocol}://{host}/get.php?username={user}&password={pass}&type=m3u';
+  if (sel === 'm3u_url') return '{protocol}://{user}:{pass}@{host}/playlist.m3u';
+  const custom = document.getElementById('customTemplate').value.trim();
+  return custom || '{protocol}://{host}/get.php?username={user}&password={pass}&type=m3u';
+}
+
+function buildUrl(tpl, s){
+  let host = s.host, protocol='http', port='';
+  if (/^https?:\/\//i.test(host)){ protocol = host.startsWith('https')? 'https':'http'; host = host.replace(/^https?:\/\//i,''); }
+  if (host.includes(':')){ const parts = host.split(':'); const last = parts[parts.length-1]; if (/^\d+$/.test(last)){ port = last; parts.pop(); host = parts.join(':'); } }
+  const hostWithPort = port ? host+':'+port : host;
+  return tpl.replace(/{host}/g, hostWithPort).replace(/{user}/g, encodeURIComponent(s.user||'')) .replace(/{pass}/g, encodeURIComponent(s.pass||'')) .replace(/{port}/g, port).replace(/{protocol}/g, protocol);
+}
+
+function generateM3U(){
+  const list = loadServers();
+  if (!list.length){ document.getElementById('preview').textContent = '# لا توجد سيرفرات'; return; }
+  const tpl = getTemplate();
+  let lines = ['#EXTM3U - MOUSE AI 🐭 Combined Servers'];
+  for (const s of list){
+    const name = s.name || (s.host + ' - ' + s.user);
+    const url = buildUrl(tpl, s);
+    lines.push(`#EXTINF:-1,${name}`);
+    lines.push(url);
+  }
+  const final = lines.join('\n');
+  localStorage.setItem(PREVIEW_CACHE, final);
+  document.getElementById('preview').textContent = final;
+  showToast('تم إنشاء المعاينة');
+}
+
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* Events hookup */
+document.getElementById('btnImport').onclick = ()=> {
+  const txt = document.getElementById('bulkInput').value.trim();
+  if (!txt) return alert('لصق النص أولاً');
+  const parsed = parseBulk(txt);
+  if (!parsed.length) return alert('لم يتم التعرف على أسطر صالحة');
+  const cur = loadServers();
+  parsed.forEach(p => cur.push({ host:p.host, user:p.user, pass:p.pass, id:p.id, source:'imported' }));
+  saveServers(cur);
+  document.getElementById('bulkInput').value = '';
+  renderServers();
+  showToast('تم الاستيراد');
+};
+document.getElementById('btnClear').onclick = ()=> { if(confirm('مسح جميع السيرفرات؟')){ saveServers([]); renderServers(); showToast('تم المسح'); } };
+document.getElementById('btnGenerate').onclick = generateM3U;
+document.getElementById('btnExportAll').onclick = ()=> {
+  const content = localStorage.getItem(PREVIEW_CACHE) || document.getElementById('preview').textContent;
+  if (!content) return alert('لا يوجد محتوى للتصدير'); const name = document.getElementById('exportName') ? document.getElementById('exportName').value.trim() : 'MOUSE_AI_SERVERS.m3u8';
+  const blob = new Blob([content], { type:'application/x-mpegURL' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+};
+document.getElementById('btnCopy').onclick = async ()=> { const text = localStorage.getItem(PREVIEW_CACHE) || document.getElementById('preview').textContent || ''; if (!text) return alert('لا يوجد شيء للنسخ'); try{ await navigator.clipboard.writeText(text); showToast('تم النسخ'); }catch(e){ alert('فشل النسخ: '+e.message); } };
+document.getElementById('btnAddSave').onclick = ()=> {
+  const host = document.getElementById('h_host').value.trim(); const user = document.getElementById('h_user').value.trim(); const pass = document.getElementById('h_pass').value.trim();
+  if (!host || !user) return alert('ادخل Host و Username');
+  const cur = loadServers(); cur.push({ host, user, pass, id:Math.random().toString(36).slice(2,9), source:'manual' }); saveServers(cur); renderServers(); document.getElementById('h_host').value = document.getElementById('h_user').value = document.getElementById('h_pass').value = ''; showToast('تم الإضافة');
+};
+document.getElementById('btnTestOpen').onclick = ()=> {
+  const preview = localStorage.getItem(PREVIEW_CACHE) || document.getElementById('preview').textContent || '';
+  if (!preview) return alert('أنشئ المعاينة أولاً');
+  const m = preview.match(/(https?:\/\/[^\s]+)/i); if (!m) return alert('لم يتم العثور على رابط'); window.open(m[1], '_blank');
+};
+document.getElementById('btnClearCache').onclick = ()=> { if(confirm('مسح المعاينة المخزنة؟')){ localStorage.removeItem(PREVIEW_CACHE); document.getElementById('preview').textContent = 'تم المسح'; } };
+
+/* Init render */
+renderServers();
+if (!localStorage.getItem(PREVIEW_CACHE)) { /* fill preview with instructions */ document.getElementById('preview').textContent = '# اضغط "إنشاء M3U مدمجة" بعد إضافة السيرفرات'; }
+
+</script>
+</body>
+</html>

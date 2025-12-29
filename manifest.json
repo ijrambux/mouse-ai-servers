@@ -1,0 +1,20 @@
+{
+  "name": "MOUSE AI IPTV Merge",
+  "short_name": "MOUSE AI",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#001226",
+  "theme_color": "#00a8ff",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192.png?text=🐭",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512.png?text=🐭",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MOUSE AI 🐭 — دمج سيرفرات IPTV</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07101a;
+    --panel:#041224;
+    --muted:#9fb0c8;
+    --primary:#00a8ff; /* ازرق ناري */
+    --accent:#ff6b6b;
+    --card:#0b1620;
+    --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box;font-family:'Tajawal',sans-serif}
+  body{margin:0;background:linear-gradient(180deg,var(--bg),#02030a);color:#eaf6ff;min-height:100vh}
+  header{height:86px;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:linear-gradient(90deg,#000, #001025 45%, var(--primary));box-shadow:0 8px 40px rgba(0,0,0,.6)}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:56px;height:56px;border-radius:12px;background:radial-gradient(circle,#00213a,#004c99);display:flex;align-items:center;justify-content:center;font-size:22px}
+  h1{font-size:1.05rem;margin:0;background:linear-gradient(90deg,#002b4d,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .header-right{font-size:13px;color:var(--muted)}
+  main{display:flex;gap:18px;padding:18px;align-items:flex-start}
+  aside{width:420px;background:linear-gradient(180deg,var(--card),#071126);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,.03);box-shadow:0 10px 40px rgba(0,0,0,.6)}
+  section.content{flex:1;background:linear-gradient(180deg,#06121a,#071024);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,.03);box-shadow:0 18px 60px rgba(0,0,0,.6)}
+  .muted{color:var(--muted);font-size:13px}
+  label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+  input[type="text"], textarea, select{
+    width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.04);background:transparent;color:#eaf6ff;margin-bottom:10px;font-size:14px;
+  }
+  textarea{min-height:120px;resize:vertical}
+  .row{display:flex;gap:8px}
+  .row .col{flex:1}
+  button{background:transparent;border:1px solid rgba(255,255,255,.06);padding:10px 12px;border-radius:8px;color:#eaf6ff;cursor:pointer}
+  button.primary{background:linear-gradient(90deg,#0066cc,var(--primary));border:none}
+  .small{padding:6px 8px;font-size:13px}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+  th,td{padding:8px;text-align:right;border-bottom:1px solid rgba(255,255,255,.03)}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  tr:hover td{background:linear-gradient(90deg, rgba(0,168,255,0.02), transparent)}
+  .actions{display:flex;gap:6px;justify-content:flex-end}
+  .chip{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.03);font-size:13px;color:var(--muted)}
+  footer{padding:14px 20px;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid rgba(255,255,255,.02);margin-top:18px}
+  .notice{background:linear-gradient(90deg, rgba(0,0,0,0.35), rgba(0,0,0,0.25));padding:10px;border-radius:8px;margin-top:10px;border:1px solid rgba(255,255,255,.02);color:var(--muted);font-size:13px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .template{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .preview{background:rgba(255,255,255,.02);padding:10px;border-radius:8px;margin-top:12px;color:#cfeeff;font-size:13px;white-space:pre-wrap;max-height:280px;overflow:auto;border:1px solid rgba(255,255,255,.02)}
+  .flex-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .center{display:flex;justify-content:center;align-items:center;gap:8px}
+  @media(max-width:980px){ aside{width:100%} main{flex-direction:column} }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">🐭</div>
+      <div>
+        <h1>MOUSE AI 🐭 — دمج سيرفرات IPTV</h1>
+        <div class="muted">واجهة مستقرة، سريعة، ومصممة لدمج سيرفرات Host:Port مع Username/Password</div>
+      </div>
+    </div>
+    <div class="header-right">حقوق الملكية © MOUSE AI — جميع الحقوق محفوظة</div>
+  </header>
+
+  <main>
+    <!-- لوحة التحكم الجانبية -->
+    <aside>
+      <div class="flex-between">
+        <div style="font-weight:700">قائمة السيرفرات</div>
+        <div class="chip" id="serverCount">0 سيرفر</div>
+      </div>
+
+      <div class="notice">يمكنك لصق قائمة السيرفرات بشكل مباشر (كل سطر: Host[:Port] TAB Username TAB Password أو مفصول بمسافات). بعدها اضغط "استيراد".</div>
+
+      <label>لصق السيرفرات (نص خام)</label>
+      <textarea id="bulkInput" placeholder="مثال سطر: fortv.cc:8080  1A63fh  337373"></textarea>
+
+      <div class="controls">
+        <button class="primary" id="btnImport">استيراد السيرفرات</button>
+        <button id="btnClear" class="small">مسح الكل</button>
+        <button id="btnAddOne" class="small">إضافة يدوي</button>
+      </div>
+
+      <label>قالب رابط M3U للـ Export</label>
+      <div class="template">
+        <select id="templateSelect">
+          <option value="xtream">Xtream-style get.php (شائع)</option>
+          <option value="m3u_url">رابط m3u مباشر (username/password داخل URL)</option>
+          <option value="custom">مخصص (استخدم {host} {user} {pass} {port})</option>
+        </select>
+        <input type="text" id="customTemplate" placeholder="قالب مخصص" style="flex:1;display:none" />
+      </div>
+
+      <div class="controls">
+        <button id="btnGenerate" class="primary">إنشاء قائمة M3U مدمجة</button>
+        <button id="btnExportAll" class="small">تحميل ملف</button>
+        <button id="btnCopy" class="small">نسخ للمخزن</button>
+      </div>
+
+      <label>معاينة (أو تعديل قبل التصدير)</label>
+      <div id="preview" class="preview">قائمة التشغيل ستظهر هنا بعد النقر على "إنشاء قائمة M3U مدمجة".</div>
+
+      <div style="margin-top:12px">
+        <div style="font-weight:700;margin-bottom:8px">قائمة السيرفرات المحفوظة</div>
+        <table id="serversTbl">
+          <thead><tr><th>Host:Port</th><th>Username</th><th>Password</th><th>مصدر</th><th style="width:120px">إجراءات</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </aside>
+
+    <!-- المنطقة الرئيسية -->
+    <section class="content">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="font-weight:800;font-size:18px">إدارة ودمج سيرفرات IPTV</div>
+        <div class="muted">MOUSE AI 🐭 — دمج ذكي وسهل</div>
+      </div>
+
+      <div style="margin-top:12px" class="muted">
+        • الواجهة تنشئ ملف M3U يحتوي روابط مخصصة لكل سيرفر وفق القالب. عند تشغيل الملف على مشغّل يدعم M3U سيقوم المشغّل بطلب السيرفرات مباشرة.<br>
+        • ملاحظة أمان: يتم تضمين اسم المستخدم وكلمة المرور داخل الروابط عند اختيار قالب URL؛ احفظ الملف في مكان آمن.
+      </div>
+
+      <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,.03)">
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <label>اضف سيرفر جديد يدوياً</label>
+          <div class="row">
+            <input id="h_host" type="text" placeholder="Host[:Port]" />
+          </div>
+          <div class="row">
+            <input id="h_user" type="text" placeholder="Username" />
+            <input id="h_pass" type="text" placeholder="Password" />
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button id="btnAddSave" class="primary">إضافة</button>
+            <button id="btnGenerateSingle" class="small">إنشاء رابط للسيرفر</button>
+          </div>
+        </div>
+
+        <div style="flex:1;min-width:220px">
+          <label>خيارات متقدمة</label>
+          <div style="display:flex;gap:8px">
+            <label style="flex:1">
+              <div class="muted" style="margin-bottom:6px">إسم ملف التصدير</div>
+              <input id="exportName" type="text" placeholder="mouse_ai_playlist.m3u8" value="MOUSE_AI_SERVERS.m3u8" />
+            </label>
+          </div>
+          <div style="margin-top:8px" class="muted">قوالب شائعة (Xtream: get.php?username={user}&password={pass}&type=m3u)</div>
+        </div>
+      </div>
+
+      <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,.03)">
+
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <button id="btnTestOpen" class="small">فتح أول رابط في تبويب جديد</button>
+        <button id="btnClearCache" class="small">مسح الكاش / ذاكرة المتصفح</button>
+        <div class="muted" style="margin-left:auto">حقوق النشر © MOUSE AI 🐭</div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer>
+    اسم & حقوق: MOUSE AI 🐭 — صفحة دمج سيرفرات IPTV — استخدم البيانات بمسؤولية. الصفحة تعمل محلياً (client-side) بدون رفع بيانات للخادم.
+  </footer>
+
+<script>
+/* ======= Storage keys ======= */
+const STORAGE_KEY = 'mouse_ai_merge_servers_v1';
+const PREVIEW_CACHE = 'mouse_ai_merge_preview_v1';
+
+/* ======= Helper functions ======= */
+function qs(sel){ return document.querySelector(sel); }
+function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
+function saveServers(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+function loadServers(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e){ return [] } }
+function sanitize(s){ return (s||'').toString().trim(); }
+function download(filename, text){ const a = document.createElement('a'); const blob = new Blob([text],{type:'application/x-mpegURL'}); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=> URL.revokeObjectURL(a.href), 2000); }
+
+/* ======= UI elements ======= */
+const bulkInput = qs('#bulkInput');
+const btnImport = qs('#btnImport');
+const btnClear = qs('#btnClear');
+const btnAddOne = qs('#btnAddOne');
+const serversTblBody = qs('#serversTbl tbody');
+const serverCountChip = qs('#serverCount');
+const templateSelect = qs('#templateSelect');
+const customTemplate = qs('#customTemplate');
+const btnGenerate = qs('#btnGenerate');
+const previewEl = qs('#preview');
+const btnExportAll = qs('#btnExportAll');
+const btnCopy = qs('#btnCopy');
+const exportNameInput = qs('#exportName');
+const btnAddSave = qs('#btnAddSave');
+const h_host = qs('#h_host'), h_user = qs('#h_user'), h_pass = qs('#h_pass');
+const btnGenerateSingle = qs('#btnGenerateSingle');
+const btnTestOpen = qs('#btnTestOpen');
+const btnClearCache = qs('#btnClearCache');
+
+/* ======= Templates ======= */
+function getTemplateValue(){
+  const t = templateSelect.value;
+  if (t === 'xtream') return '{protocol}://{host}/get.php?username={user}&password={pass}&type=m3u';
+  if (t === 'm3u_url') return '{protocol}://{user}:{pass}@{host}/playlist.m3u';
+  if (t === 'custom') return sanitize(customTemplate.value) || '{protocol}://{host}/get.php?username={user}&password={pass}&type=m3u';
+  return '{protocol}://{host}/get.php?username={user}&password={pass}&type=m3u';
+}
+
+/* ======= Parse bulk input (many formats) ======= */
+function parseBulk(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const out = [];
+  for (const raw of lines){
+    // possible separators: tab, multiple spaces, comma
+    let cols = raw.split(/\t+/);
+    if (cols.length === 1) cols = raw.split(/\s{2,}/); // 2+ spaces
+    if (cols.length === 1) cols = raw.split(/\s+/); // fallback single spaces
+    // if only 1 column (maybe host:port|user|pass separated by |)
+    if (cols.length === 1){
+      const alt = raw.split(/[|,;]/).map(s=>s.trim()).filter(Boolean);
+      if (alt.length >= 3) cols = alt;
+    }
+    if (cols.length >= 3){
+      const host = sanitize(cols[0]);
+      const user = sanitize(cols[1]);
+      const pass = sanitize(cols[2]);
+      out.push({ host, user, pass, id: Math.random().toString(36).slice(2,9), source: 'imported' });
+    } else {
+      // ignore invalid lines
+      console.warn('خط سطر غير مفهوم وتجاهل:', raw);
+    }
+  }
+  return out;
+}
+
+/* ======= Render servers table ======= */
+function renderServers(){
+  const list = loadServers();
+  serversTblBody.innerHTML = '';
+  for (const s of list){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(s.host)}</td>
+      <td>${escapeHtml(s.user)}</td>
+      <td>${escapeHtml(s.pass)}</td>
+      <td>${escapeHtml(s.source || 'manual')}</td>
+      <td class="actions">
+        <button data-id="${s.id}" class="small edit">تعديل</button>
+        <button data-id="${s.id}" class="small del">حذف</button>
+      </td>
+    `;
+    serversTblBody.appendChild(tr);
+  }
+  serverCountChip.textContent = list.length + ' سيرفر';
+  // attach events
+  qsa('button.edit').forEach(b => b.onclick = ()=> editServer(b.dataset.id));
+  qsa('button.del').forEach(b => b.onclick = ()=> { if(confirm('حذف السيرفر نهائياً؟')) deleteServer(b.dataset.id); });
+  updateCategoryPreview();
+}
+
+/* ======= CRUD servers ======= */
+function addServer(obj){
+  const list = loadServers();
+  list.push(obj);
+  saveServers(list);
+  renderServers();
+}
+function deleteServer(id){
+  let list = loadServers();
+  list = list.filter(s => s.id !== id);
+  saveServers(list);
+  renderServers();
+}
+function editServer(id){
+  const list = loadServers();
+  const s = list.find(x=>x.id===id);
+  if (!s) return alert('لم يتم العثور على السيرفر');
+  // prefill side form for quick edit
+  h_host.value = s.host; h_user.value = s.user; h_pass.value = s.pass;
+  // remove old, user will click "إضافة" to save (overwrite)
+  deleteServer(id);
+}
+
+/* ======= Generate M3U content ======= */
+function buildUrlFromTemplate(tpl, server){
+  // fill placeholders: {host} {user} {pass} {port} {protocol}
+  let host = server.host;
+  let protocol = 'http';
+  let port = '';
+  // if host includes protocol prefix or port
+  // accept forms: host:port or http://host:port
+  const hasProto = host.match(/^https?:\/\//i);
+  if (hasProto){
+    const tmp = host.replace(/^https?:\/\//i, '');
+    protocol = host.startsWith('https') ? 'https' : 'http';
+    host = tmp;
+  }
+  // split host:port
+  if (host.includes(':')){
+    const parts = host.split(':');
+    // keep ipv6 safe? in simple approach assume last part port if numeric
+    const last = parts[parts.length-1];
+    if (/^\d+$/.test(last)){ port = last; parts.pop(); host = parts.join(':'); }
+  }
+  // ensure {host} uses host:port when port present if template uses {host}
+  const hostWithPort = port ? host + ':' + port : host;
+  let out = tpl.replace(/{host}/g, hostWithPort)
+               .replace(/{user}/g, encodeURIComponent(server.user || ''))
+               .replace(/{pass}/g, encodeURIComponent(server.pass || ''))
+               .replace(/{port}/g, port || '')
+               .replace(/{protocol}/g, protocol);
+  return out;
+}
+
+function generateM3U(){
+  const servers = loadServers();
+  if (servers.length === 0) {
+    previewEl.textContent = '# لا توجد سيرفرات - أضف أو استورد أولاً';
+    return;
+  }
+  const tpl = getTemplateValue();
+  let lines = ['#EXTM3U - MOUSE AI 🐭 Combined Servers'];
+  for (const s of servers){
+    // create friendly name
+    const name = s.name || `${s.host} - ${s.user}`;
+    const url = buildUrlFromTemplate(tpl, s);
+    // create an EXTINF entry: you can improve group-title or tvg-logo later
+    lines.push(`#EXTINF:-1 group-title="${escapeAttr(s.source||'server')}",${name}`);
+    lines.push(url);
+  }
+  const final = lines.join('\n');
+  previewEl.textContent = final;
+  localStorage.setItem(PREVIEW_CACHE, final);
+  return final;
+}
+
+/* ======= Utility escape ======= */
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function escapeAttr(s){ return (s||'').toString().replace(/"/g,'&quot;'); }
+
+/* ======= Parse example servers provided by user (multi-line) ======= */
+btnImport.onclick = () => {
+  const text = bulkInput.value.trim();
+  if (!text) return alert('الرجاء لصق بيانات السيرفرات في الحقل أولاً');
+  const parsed = parseBulk(text);
+  if (parsed.length === 0){ alert('لم يتم العثور على أسطر صحيحة'); return; }
+  const list = loadServers();
+  parsed.forEach(p => list.push({ host:p.host, user:p.user, pass:p.pass, id: p.id, source:'imported' }));
+  saveServers(list);
+  bulkInput.value = '';
+  renderServers();
+  showToast('تم استيراد ' + parsed.length + ' سيرفر');
+};
+
+/* Clear all */
+btnClear.onclick = () => {
+  if (!confirm('مسح جميع السيرفرات المحفوظة؟')) return;
+  saveServers([]);
+  renderServers();
+  showToast('تم المسح');
+};
+
+/* Add manual */
+btnAddOne.onclick = () => {
+  // open manual area focus
+  h_host.focus();
+};
+btnAddSave.onclick = () => {
+  const host = sanitize(h_host.value);
+  const user = sanitize(h_user.value);
+  const pass = sanitize(h_pass.value);
+  if (!host || !user) return alert('الرجاء إدخال Host و Username على الأقل');
+  const id = Math.random().toString(36).slice(2,9);
+  addServer({ host, user, pass, id, source:'manual' });
+  // clear inputs
+  h_host.value = h_user.value = h_pass.value = '';
+  showToast('تمت الإضافة');
+};
+
+/* Generate + preview */
+btnGenerate.onclick = () => {
+  const m3u = generateM3U();
+  if (m3u) showToast('تم إنشاء القائمة (معاينة جاهزة)');
+  updateCategoryPreview();
+};
+
+/* Export file */
+btnExportAll.onclick = () => {
+  const content = localStorage.getItem(PREVIEW_CACHE) || generateM3U() || '';
+  if (!content){ return alert('لا يوجد محتوى للتصدير. اضغط "إنشاء قائمة M3U مدمجة" أولاً.'); }
+  const name = sanitize(exportNameInput.value) || 'MOUSE_AI_SERVERS.m3u8';
+  download(name, content);
+  showToast('تم تنزيل الملف: ' + name);
+};
+
+/* Copy to clipboard */
+btnCopy.onclick = async () => {
+  const txt = localStorage.getItem(PREVIEW_CACHE) || previewEl.textContent || '';
+  if (!txt) return alert('لا يوجد شيء للنسخ');
+  try {
+    await navigator.clipboard.writeText(txt);
+    showToast('تم النسخ للحافظة');
+  } catch(e){ alert('النسخ فشل: ' + e.message); }
+};
+
+/* Generate single server URL */
+btnGenerateSingle.onclick = () => {
+  const host = sanitize(h_host.value);
+  const user = sanitize(h_user.value);
+  const pass = sanitize(h_pass.value);
+  if (!host || !user) return alert('ادخل Host و Username');
+  const tpl = getTemplateValue();
+  const url = buildUrlFromTemplate(tpl, {host,user,pass});
+  previewEl.textContent = '# رابط تم إنشاؤه:\n' + url;
+  showToast('تم إنشاء رابط السيرفر');
+};
+
+/* Test open first link in new tab */
+btnTestOpen.onclick = () => {
+  const preview = localStorage.getItem(PREVIEW_CACHE) || previewEl.textContent || '';
+  if (!preview) return alert('لا يوجد رابط للاختبار. أنشئ القائمة أولاً.');
+  // find first http(s) link
+  const m = preview.match(/(https?:\/\/[^\s]+)/i);
+  if (!m) return alert('لم يتم العثور على رابط صالح في المعاينة');
+  window.open(m[1], '_blank');
+};
+
+/* Clear cache/local preview */
+btnClearCache.onclick = () => {
+  if (!confirm('مسح الكاش (معاينة محلية) و localStorage؟')) return;
+  localStorage.removeItem(PREVIEW_CACHE);
+  // optionally remove servers
+  // localStorage.removeItem(STORAGE_KEY);
+  previewEl.textContent = 'تم مسح الكاش';
+  showToast('تم مسح الكاش');
+};
+
+/* show toast */
+function showToast(msg){
+  const elToast = document.createElement('div');
+  elToast.textContent = msg;
+  elToast.style.position='fixed'; elToast.style.left='50%'; elToast.style.transform='translateX(-50%)';
+  elToast.style.bottom='26px'; elToast.style.background='linear-gradient(90deg,#002b4d,#00a8ff)';
+  elToast.style.padding='10px 14px'; elToast.style.borderRadius='8px'; elToast.style.color='#fff'; elToast.style.zIndex=9999;
+  document.body.appendChild(elToast);
+  setTimeout(()=> elToast.style.opacity='0.01',2000);
+  setTimeout(()=> elToast.remove(),2300);
+}
+
+/* render and initial */
+renderServers();
+
+/* utility: update preview categories list (from servers) */
+function updateCategoryPreview(){
+  // build category list from servers' source
+  const list = loadServers();
+  const cats = Array.from(new Set(list.map(s => s.source || 'server'))).slice(0,12);
+  const info = 'مصادر السيرفرات: ' + (cats.length? cats.join(' • ') : 'لا يوجد');
+  // append to preview top if empty
+  if (!previewEl.textContent || previewEl.textContent.includes('لا توجد سيرفرات')) {
+    previewEl.textContent = info + '\n\n# اضغط "إنشاء قائمة M3U مدمجة" لبدء';
+  } else {
+    previewEl.textContent = previewEl.textContent.replace(/^.*\n\n#/, info + '\n\n#'); // try to maintain
+  }
+}
+
+/* Allow switching to custom template */
+templateSelect.addEventListener('change', ()=>{
+  if (templateSelect.value === 'custom') customTemplate.style.display = 'block';
+  else customTemplate.style.display = 'none';
+});
+
+/* Auto-generate from initial user-provided list (optional) */
+/* Pre-fill the bulk input with the exact list the user gave (for convenience) */
+const initialData = `fortv.cc:8080\t1A63fh\t337373
+tvhomesmart.xyz:8080\t32930499\t5req2f3q3
+lzr.dyndns-ip.org\t9976935414\t7026008220
+mytvstream.net:8080\tTWEk66\t036939
+fortv.cc:8080\trQFr7P7\tQPqD5R4
+lobitv65.xyz:8080\tsvd2884\tsvd.475
+fruhd.cc:80\t4428202673895240\t4428202673895240
+lihfd.trfhbee.xyz:25461\tc8bc9ffb28714bc2\t2f7390356eb5dc6c
+lobitv65.xyz:8080\ttkn9985\tvRkBPApGQFGB
+fortv.cc:8080\tY9PGbP\t167832
+sasy.selfip.co:80\talecogmanc\tcognatoanto21
+g.guardianplay.cc:80\tantoniosalvato\tc8sDseP16
+rionetrieste1926.clickgal1.com\tGabrielealtieri8\tg3Csjhz
+germanyservers1.net:8080\tcangokhan\t08eyn56cd
+103.161.34.27:8080\tRobertlauc\t8vvWCeBBvAjg
+eeee.blue:8080\tRN3v5fWQUN\tDXo6pG4eq5
+eeee.blue:8080\tdkxMphTaaX\thH4RS6N5Mq
+nuhygo.shop:8080\t2643496sec\t2643496sec
+francor72.code.co.ro:8080\tcoppolatoiano\tK5e2vYatjH
+aax.vkfr.co.ro:8080\tMauroma\tRomauri
+nuhygo.shop:8080\tZzLCGz7kfa\tfAs6vK3AvA
+skyplayau.in:8080\trandeer25h\tskyplay481h
+w212sf.xyz:2086\t70:2a:d5:d8:29:74\tQzEbF5drkhfP
+live.iptv.wtf\takvkwovr\t628Lhq4Ijp
+hh.hdmediashop.com:2086\talizirek\tSLcyYX44Hi
+nuhygo.shop:8080\tadem43\tbursa1963`;
+if (!localStorage.getItem(STORAGE_KEY)) {
+  bulkInput.value = initialData;
+}
+/* end of script */
+</script>
+</body>
+</html>
