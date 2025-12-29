@@ -3,17 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MOUSE AI 🐭 — دمج سيرفرات IPTV (Web App)</title>
-
-  <link rel="manifest" href="manifest.json">
+  <title>MOUSE AI 🐭 — دمج سيرفرات IPTV</title>
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#001226">
   <style>
     :root{--bg:#07101a;--primary:#00a8ff;--muted:#9fb0c8;--card:#0b1620;--text:#eaf6ff}
-    *{box-sizing:border-box;font-family:Tahoma,Arial, sans-serif}
+    *{box-sizing:border-box;font-family:'Tajawal',sans-serif}
     body{margin:0;background:linear-gradient(180deg,var(--bg),#02030a);color:var(--text);min-height:100vh}
     header{height:86px;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:linear-gradient(90deg,#000,#001025 45%,var(--primary));box-shadow:0 8px 40px rgba(0,0,0,.6)}
     .brand{display:flex;align-items:center;gap:12px}
-    .logo{width:56px;height:56px;border-radius:12px;background:radial-gradient(circle,#00213a,#004c99);display:flex;align-items:center;justify-content:center;font-size:22px}
+    .logo{width:48px;height:48px;border-radius:10px;background:radial-gradient(circle,#00213a,#004c99);display:flex;align-items:center;justify-content:center;font-size:20px}
     h1{font-size:1.05rem;margin:0;background:linear-gradient(90deg,#002b4d,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     main{display:flex;gap:18px;padding:18px;align-items:flex-start;flex-wrap:wrap}
     aside{width:420px;background:linear-gradient(180deg,var(--card),#071126);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,.03);box-shadow:0 10px 40px rgba(0,0,0,.6)}
@@ -41,10 +40,10 @@
       <div class="logo">🐭</div>
       <div>
         <h1>MOUSE AI 🐭 — دمج سيرفرات IPTV</h1>
-        <div class="muted">صفحة ويب قابلة للتثبيت كتطبيق (PWA). عمل محلي وسهل النشر.</div>
+        <div class="muted">واجهة تثبيتية (PWA) + proxy جاهز للنشر على Vercel</div>
       </div>
     </div>
-    <div class="muted">حقوق النشر © MOUSE AI 🐭</div>
+    <div class="muted">حقوق © MOUSE AI</div>
   </header>
 
   <main>
@@ -54,7 +53,7 @@
         <div class="chip" id="serverCount">0 سيرفر</div>
       </div>
 
-      <label>لصق قائمة السيرفرات (كل سطر: Host[:Port] <tab> Username <tab> Password)</label>
+      <label>لصق السيرفرات (سطر واحد = Host[:Port] ⟶ Tab أو مسافتان ⟶ Username ⟶ Password)</label>
       <textarea id="bulkInput" placeholder="مثال: fortv.cc:8080	1A63fh	337373"></textarea>
 
       <div class="controls">
@@ -62,11 +61,11 @@
         <button id="btnClear" class="small">مسح الكل</button>
       </div>
 
-      <label>قالب إنشاء الروابط</label>
+      <label>قالب الروابط</label>
       <select id="templateSelect">
-        <option value="xtream">Xtream-style: {protocol}://{host}/get.php?username={user}&password={pass}&type=m3u</option>
-        <option value="m3u_url">Basic auth URL: {protocol}://{user}:{pass}@{host}/playlist.m3u</option>
-        <option value="custom">مخصص (استخدم {host} {user} {pass} {port} {protocol})</option>
+        <option value="xtream">Xtream: {protocol}://{host}/get.php?username={user}&password={pass}&type=m3u</option>
+        <option value="m3u_url">Basic auth: {protocol}://{user}:{pass}@{host}/playlist.m3u</option>
+        <option value="custom">مخصص</option>
       </select>
       <input id="customTemplate" placeholder="قالب مخصص (مثال: https://{host}/live/{user}/{pass}/index.m3u)" style="display:none" />
 
@@ -76,21 +75,18 @@
         <button id="btnCopy" class="small">نسخ</button>
       </div>
 
-      <label>معاينة المخرجات</label>
+      <label>معاينة الناتج</label>
       <div id="preview" class="preview">اضغط "إنشاء M3U مدمجة" لعرض المعاينة هنا.</div>
 
       <div style="margin-top:12px">
-        <div style="font-weight:700;margin-bottom:8px">قائمة السيرفرات المحفوظة</div>
-        <table id="serversTbl">
-          <thead><tr><th>Host:Port</th><th>Username</th><th>Password</th><th>مصدر</th><th>إجراءات</th></tr></thead>
-          <tbody></tbody>
-        </table>
+        <div style="font-weight:700;margin-bottom:8px">سيرفرات محفوظة</div>
+        <table id="serversTbl"><thead><tr><th>Host:Port</th><th>Username</th><th>Password</th><th>مصدر</th><th>حذف</th></tr></thead><tbody></tbody></table>
       </div>
     </aside>
 
     <section class="content">
-      <h2>تشغيل كتطبيق ويب</h2>
-      <p class="muted">هذا المشروع يعمل كـ PWA (يمكن تثبيته على الجهاز). لتشغيله محلياً: افتح مجلد الملفات عبر خادم HTTP بسيط (python -m http.server) أو انشر على GitHub Pages.</p>
+      <h2>تشغيل ونشر على Vercel</h2>
+      <p class="muted">بعد رفع المشروع مع مجلد <code>api/proxy.js</code> و <code>vercel.json</code> يمكنك استدعاء تحميل ملفات M3U عبر البروكسي على Vercel: <code>/api/proxy?url=ENCODED_URL</code></p>
 
       <hr style="border:none;border-top:1px solid rgba(255,255,255,.03);margin:12px 0">
 
@@ -102,7 +98,7 @@
       </div>
 
       <div style="margin-top:12px" class="muted">
-        • ملاحظة مهمة: تحميل روابط M3U مباشرة من مواقع خارجية قد يفشل بسبب CORS. استخدم proxy أو استورد الملف يدوياً في مربع الاستيراد.
+        ملاحظة: تحميل M3U خارجي قد يفشل بسبب CORS — استخدم البروكسي المضمّن على Vercel أو استورد الملف يدوياً.
       </div>
 
       <hr style="border:none;border-top:1px solid rgba(255,255,255,.03);margin:12px 0">
@@ -111,30 +107,49 @@
         <div>حالة التطبيق: <span id="appStatus" class="muted">جاهز</span></div>
         <div>
           <button id="btnTestOpen" class="small">فتح أول رابط</button>
-          <button id="btnClearCache" class="small">مسح الكاش</button>
+          <button id="btnClearCache" class="small">مسح المعاينة</button>
         </div>
       </div>
     </section>
   </main>
 
   <footer>
-    حقوق الطبع © MOUSE AI 🐭 — استخدم هذه الأدوات بمسؤولية. التطبيق يعمل بالكامل من جهة العميل (client-side).
+    حقوق © MOUSE AI 🐭 — التطبيق يعمل من جهة العميل. احفظ بياناتك بمسؤولية.
   </footer>
 
 <script>
-/* بسيط: تسجيل Service Worker (لـ PWA و caching). */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(()=> console.log('SW registered')).catch(e=>console.warn('SW failed', e));
-}
-
-/* وظائف الواجهة: استخدم نفس المنطق كما في النسخة السابقة (مبسّطة) */
+/* ======= Keys / storage ======= */
 const STORAGE_KEY = 'mouse_ai_merge_servers_v1';
 const PREVIEW_CACHE = 'mouse_ai_merge_preview_v1';
 
+/* ======= Helpers ======= */
+const qs = s => document.querySelector(s);
 function loadServers(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }catch(e){ return [] } }
 function saveServers(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-function showToast(msg){ alert(msg); } // مبسط - يمكنك تبديله بإشعار أجمل
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function id(){ return Math.random().toString(36).slice(2,9); }
 
+/* ======= UI elements ======= */
+const bulkInput = qs('#bulkInput');
+const btnImport = qs('#btnImport');
+const btnClear = qs('#btnClear');
+const serversTblBody = qs('#serversTbl tbody');
+const serverCountChip = qs('#serverCount');
+const templateSelect = qs('#templateSelect');
+const customTemplate = qs('#customTemplate');
+const btnGenerate = qs('#btnGenerate');
+const previewEl = qs('#preview');
+const btnExportAll = qs('#btnExportAll');
+const btnCopy = qs('#btnCopy');
+const btnAddSave = qs('#btnAddSave');
+const h_host = qs('#h_host'), h_user = qs('#h_user'), h_pass = qs('#h_pass');
+const btnTestOpen = qs('#btnTestOpen');
+const btnClearCache = qs('#btnClearCache');
+
+/* show tiny toast */
+function showToast(msg){ const n = document.createElement('div'); n.textContent = msg; n.style.position='fixed'; n.style.left='50%'; n.style.transform='translateX(-50%)'; n.style.bottom='20px'; n.style.background='linear-gradient(90deg,#002b4d,#00a8ff)'; n.style.color='#fff'; n.style.padding='8px 12px'; n.style.borderRadius='8px'; n.style.zIndex=9999; document.body.appendChild(n); setTimeout(()=> { n.style.opacity=0; setTimeout(()=>n.remove(),400); },2000); }
+
+/* parse bulk input lines */
 function parseBulk(text){
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const out = [];
@@ -142,97 +157,140 @@ function parseBulk(text){
     let cols = raw.split(/\t+/);
     if (cols.length === 1) cols = raw.split(/\s{2,}/);
     if (cols.length === 1) cols = raw.split(/\s+/);
-    if (cols.length >= 3){ out.push({ host:cols[0].trim(), user:cols[1].trim(), pass:cols[2].trim(), id:Math.random().toString(36).slice(2,9), source:'imported' }); }
+    if (cols.length >= 3){
+      out.push({ host:cols[0].trim(), user:cols[1].trim(), pass:cols[2].trim(), id:id(), source:'imported' });
+    }
   }
   return out;
 }
 
+/* server CRUD & render */
 function renderServers(){
   const list = loadServers();
-  const tbody = document.querySelector('#serversTbl tbody'); tbody.innerHTML = '';
+  serversTblBody.innerHTML = '';
   for (const s of list){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${escapeHtml(s.host)}</td><td>${escapeHtml(s.user)}</td><td>${escapeHtml(s.pass)}</td><td>${escapeHtml(s.source||'manual')}</td>
-      <td><button data-id="${s.id}" class="del small">حذف</button></td>`;
-    tbody.appendChild(tr);
+    tr.innerHTML = `<td>${escapeHtml(s.host)}</td><td>${escapeHtml(s.user)}</td><td>${escapeHtml(s.pass)}</td><td>${escapeHtml(s.source||'manual')}</td><td><button data-id="${s.id}" class="del small">حذف</button></td>`;
+    serversTblBody.appendChild(tr);
   }
-  document.getElementById('serverCount').textContent = list.length + ' سيرفر';
-  document.querySelectorAll('button.del').forEach(b => b.onclick = ()=>{ if(confirm('حذف؟')) { const id=b.dataset.id; const arr=loadServers().filter(x=>x.id!==id); saveServers(arr); renderServers(); }});
+  serverCountChip.textContent = list.length + ' سيرفر';
+  document.querySelectorAll('button.del').forEach(b => b.onclick = ()=>{ if(confirm('حذف؟')) { const idv=b.dataset.id; const arr=loadServers().filter(x=>x.id!==idv); saveServers(arr); renderServers(); }});
 }
 
-/* Template builder */
+/* template builder */
 function getTemplate(){
-  const sel = document.getElementById('templateSelect').value;
-  if (sel === 'xtream') return '{protocol}://{host}/get.php?username={user}&password={pass}&type=m3u';
-  if (sel === 'm3u_url') return '{protocol}://{user}:{pass}@{host}/playlist.m3u';
-  const custom = document.getElementById('customTemplate').value.trim();
+  const val = templateSelect.value;
+  if (val === 'xtream') return '{protocol}://{host}/get.php?username={user}&password={pass}&type=m3u';
+  if (val === 'm3u_url') return '{protocol}://{user}:{pass}@{host}/playlist.m3u';
+  const custom = customTemplate.value.trim();
   return custom || '{protocol}://{host}/get.php?username={user}&password={pass}&type=m3u';
 }
+templateSelect.addEventListener('change', ()=>{ customTemplate.style.display = templateSelect.value === 'custom' ? 'block' : 'none'; });
 
-function buildUrl(tpl, s){
-  let host = s.host, protocol='http', port='';
-  if (/^https?:\/\//i.test(host)){ protocol = host.startsWith('https')? 'https':'http'; host = host.replace(/^https?:\/\//i,''); }
+/* build url filling placeholders */
+function buildUrlFromTemplate(tpl, server){
+  let host = server.host, protocol='http', port='';
+  if (/^https?:\/\//i.test(host)){ protocol = host.startsWith('https') ? 'https' : 'http'; host = host.replace(/^https?:\/\//i,''); }
   if (host.includes(':')){ const parts = host.split(':'); const last = parts[parts.length-1]; if (/^\d+$/.test(last)){ port = last; parts.pop(); host = parts.join(':'); } }
   const hostWithPort = port ? host+':'+port : host;
-  return tpl.replace(/{host}/g, hostWithPort).replace(/{user}/g, encodeURIComponent(s.user||'')) .replace(/{pass}/g, encodeURIComponent(s.pass||'')) .replace(/{port}/g, port).replace(/{protocol}/g, protocol);
+  return tpl.replace(/{host}/g, hostWithPort).replace(/{user}/g, encodeURIComponent(server.user||'')).replace(/{pass}/g, encodeURIComponent(server.pass||'')).replace(/{port}/g, port).replace(/{protocol}/g, protocol);
 }
 
+/* create M3U from servers */
 function generateM3U(){
-  const list = loadServers();
-  if (!list.length){ document.getElementById('preview').textContent = '# لا توجد سيرفرات'; return; }
+  const servers = loadServers();
+  if (!servers.length){ previewEl.textContent = '# لا توجد سيرفرات'; return; }
   const tpl = getTemplate();
-  let lines = ['#EXTM3U - MOUSE AI 🐭 Combined Servers'];
-  for (const s of list){
-    const name = s.name || (s.host + ' - ' + s.user);
-    const url = buildUrl(tpl, s);
+  const lines = ['#EXTM3U - MOUSE AI 🐭 Combined Servers'];
+  for (const s of servers){
+    const name = s.name || `${s.host} - ${s.user}`;
+    const url = buildUrlFromTemplate(tpl, s);
     lines.push(`#EXTINF:-1,${name}`);
     lines.push(url);
   }
   const final = lines.join('\n');
+  previewEl.textContent = final;
   localStorage.setItem(PREVIEW_CACHE, final);
-  document.getElementById('preview').textContent = final;
   showToast('تم إنشاء المعاينة');
 }
 
-function escapeHtml(s){ return (s||'').toString().replace(/[&<>"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+/* export / copy */
+btnExportAll.addEventListener('click', ()=> {
+  const content = localStorage.getItem(PREVIEW_CACHE) || previewEl.textContent || '';
+  if (!content) return alert('لا يوجد محتوى');
+  const blob = new Blob([content], { type:'application/x-mpegURL' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'MOUSE_AI_SERVERS.m3u8'; document.body.appendChild(a); a.click(); a.remove();
+});
+btnCopy.addEventListener('click', async ()=> {
+  const content = localStorage.getItem(PREVIEW_CACHE) || previewEl.textContent || '';
+  if (!content) return alert('لا يوجد شيء للنسخ');
+  try{ await navigator.clipboard.writeText(content); showToast('تم النسخ'); }catch(e){ alert('فشل النسخ: '+e.message); }
+});
 
-/* Events hookup */
-document.getElementById('btnImport').onclick = ()=> {
-  const txt = document.getElementById('bulkInput').value.trim();
-  if (!txt) return alert('لصق النص أولاً');
-  const parsed = parseBulk(txt);
-  if (!parsed.length) return alert('لم يتم التعرف على أسطر صالحة');
-  const cur = loadServers();
-  parsed.forEach(p => cur.push({ host:p.host, user:p.user, pass:p.pass, id:p.id, source:'imported' }));
-  saveServers(cur);
-  document.getElementById('bulkInput').value = '';
-  renderServers();
-  showToast('تم الاستيراد');
-};
-document.getElementById('btnClear').onclick = ()=> { if(confirm('مسح جميع السيرفرات؟')){ saveServers([]); renderServers(); showToast('تم المسح'); } };
-document.getElementById('btnGenerate').onclick = generateM3U;
-document.getElementById('btnExportAll').onclick = ()=> {
-  const content = localStorage.getItem(PREVIEW_CACHE) || document.getElementById('preview').textContent;
-  if (!content) return alert('لا يوجد محتوى للتصدير'); const name = document.getElementById('exportName') ? document.getElementById('exportName').value.trim() : 'MOUSE_AI_SERVERS.m3u8';
-  const blob = new Blob([content], { type:'application/x-mpegURL' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
-};
-document.getElementById('btnCopy').onclick = async ()=> { const text = localStorage.getItem(PREVIEW_CACHE) || document.getElementById('preview').textContent || ''; if (!text) return alert('لا يوجد شيء للنسخ'); try{ await navigator.clipboard.writeText(text); showToast('تم النسخ'); }catch(e){ alert('فشل النسخ: '+e.message); } };
-document.getElementById('btnAddSave').onclick = ()=> {
-  const host = document.getElementById('h_host').value.trim(); const user = document.getElementById('h_user').value.trim(); const pass = document.getElementById('h_pass').value.trim();
+/* import / add / clear handlers */
+btnImport.addEventListener('click', ()=> {
+  const txt = bulkInput.value.trim(); if (!txt) return alert('ألصق البيانات أولاً');
+  const parsed = parseBulk(txt); if (!parsed.length) return alert('لا توجد أسطر صحيحة');
+  const cur = loadServers(); parsed.forEach(p => cur.push({ host:p.host, user:p.user, pass:p.pass, id:p.id, source:'imported' })); saveServers(cur);
+  bulkInput.value = ''; renderServers(); showToast('تم الاستيراد');
+});
+btnClear.addEventListener('click', ()=> { if (confirm('مسح كل السيرفرات؟')){ saveServers([]); renderServers(); showToast('تم المسح'); }});
+btnAddSave.addEventListener('click', ()=> {
+  const host = h_host.value.trim(), user = h_user.value.trim(), pass = h_pass.value.trim();
   if (!host || !user) return alert('ادخل Host و Username');
-  const cur = loadServers(); cur.push({ host, user, pass, id:Math.random().toString(36).slice(2,9), source:'manual' }); saveServers(cur); renderServers(); document.getElementById('h_host').value = document.getElementById('h_user').value = document.getElementById('h_pass').value = ''; showToast('تم الإضافة');
-};
-document.getElementById('btnTestOpen').onclick = ()=> {
-  const preview = localStorage.getItem(PREVIEW_CACHE) || document.getElementById('preview').textContent || '';
-  if (!preview) return alert('أنشئ المعاينة أولاً');
-  const m = preview.match(/(https?:\/\/[^\s]+)/i); if (!m) return alert('لم يتم العثور على رابط'); window.open(m[1], '_blank');
-};
-document.getElementById('btnClearCache').onclick = ()=> { if(confirm('مسح المعاينة المخزنة؟')){ localStorage.removeItem(PREVIEW_CACHE); document.getElementById('preview').textContent = 'تم المسح'; } };
+  const cur = loadServers(); cur.push({ host, user, pass, id: id(), source:'manual' }); saveServers(cur); renderServers();
+  h_host.value = h_user.value = h_pass.value = ''; showToast('تمت الإضافة');
+});
 
-/* Init render */
+/* open first link */
+btnTestOpen.addEventListener('click', ()=> {
+  const content = localStorage.getItem(PREVIEW_CACHE) || previewEl.textContent || '';
+  if (!content) return alert('أنشئ المعاينة أولاً');
+  const m = content.match(/(https?:\/\/[^\s]+)/i); if (!m) return alert('لا يوجد رابط في المعاينة'); window.open(m[1], '_blank');
+});
+btnClearCache.addEventListener('click', ()=> { localStorage.removeItem(PREVIEW_CACHE); previewEl.textContent = 'تم المسح'; showToast('تم المسح'); });
+
+/* init render */
+function id(){ return Math.random().toString(36).slice(2,9); }
 renderServers();
-if (!localStorage.getItem(PREVIEW_CACHE)) { /* fill preview with instructions */ document.getElementById('preview').textContent = '# اضغط "إنشاء M3U مدمجة" بعد إضافة السيرفرات'; }
 
+/* ======= fetchM3U with proxy fallback ======= */
+/* use /api/proxy?url=ENCODED_URL when direct fetch fails (CORS/network) */
+async function fetchM3U(url, useProxy=false, timeoutMs=15000){
+  try {
+    const finalUrl = useProxy ? `/api/proxy?url=${encodeURIComponent(url)}` : url;
+    const controller = new AbortController();
+    const idt = setTimeout(()=> controller.abort(), timeoutMs);
+    const res = await fetch(finalUrl, { signal: controller.signal });
+    clearTimeout(idt);
+    if (!res.ok) return { ok:false, error:`HTTP ${res.status} ${res.statusText}` };
+    const text = await res.text();
+    return { ok:true, text };
+  } catch (err) {
+    return { ok:false, error: err.message || String(err) };
+  }
+}
+
+/* example usage: load remote m3u with fallback to proxy */
+async function loadM3UAndInsert(url){
+  showToast('تحميل: ' + url);
+  let r = await fetchM3U(url, false);
+  if (!r.ok) {
+    console.warn('direct failed:', r.error, 'trying proxy');
+    r = await fetchM3U(url, true);
+    if (!r.ok) {
+      alert('فشل تحميل الملف: ' + r.error + '\nجرب استيراد الملف يدوياً أو تحقق من CORS أو استخدم proxy مدعوم.');
+      return;
+    }
+  }
+  // basic parse: store in preview cache (client-side)
+  localStorage.setItem(PREVIEW_CACHE, r.text);
+  previewEl.textContent = r.text;
+  showToast('تم التحميل');
+}
+
+/* expose function for testing in console (optional) */
+window.loadM3UAndInsert = loadM3UAndInsert;
 </script>
 </body>
 </html>
